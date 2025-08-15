@@ -11,3 +11,53 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.nav-link{
+  margin-left: 40px;
+}
+.navbar.hero-section {
+  position: relative;
+  background: #ffffff !important;
+  border-bottom: 1px solid #eaeaea; /* light subtle border */
+  box-shadow: none !important;
+}
+
+/* Keep seamless brightness if needed */
+.navbar.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  filter: brightness(1.03); 
+  z-index: -1;
+}
+
+.navbar.hero-section {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar.hero-section {
+  padding-top: 0.4rem;   /* default is around 0.75rem */
+  padding-bottom: 0.4rem;
+}
+
+.navbar .nav-link {
+  padding-top: 0.3rem;   /* reduce vertical padding */
+  padding-bottom: 0.3rem;
+}
+a.footer-link {
+  display: inline-block;
+  color: #555;                 /* default grey */
+  text-decoration: none;       /* remove underline */
+  transition: color 0.3s ease; /* smooth fade */
+            /* subtle space around link */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif; /* clean modern font */
+                margin-top: 8px;              /* space above */
+  margin-bottom: 12px;
+}
+
+a.footer-link:hover {
+  color: #007bff; /* blue on hover */
+}
