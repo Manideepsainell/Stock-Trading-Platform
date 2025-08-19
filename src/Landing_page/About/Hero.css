@@ -1,0 +1,9 @@
+p {
+    font-size: 1rem;
+    line-height: 1.8;
+    margin-block-start: 1em;
+    margin-block-end: 15px; /* or 1em for consistency */
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    unicode-bidi: isolate; /* only if needed */
+}
