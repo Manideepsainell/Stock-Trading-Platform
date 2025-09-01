@@ -6,16 +6,22 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [flash, setFlash] = useState("");
 
+  // Load user from localStorage on mount
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
 
-    // Auto-logout if no token found (or you can also check expiry if needed)
     if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
-    } else {
-      handleLogout(); // force logout on refresh if no token
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (err) {
+        console.error("Failed to parse user from localStorage:", err);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setUser(null);
+      }
     }
+    // Do NOT auto-logout immediately; let login handle invalid token later
   }, []);
 
   const showFlash = (message) => {
@@ -23,12 +29,19 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => setFlash(""), 3000); // auto-clear after 3 sec
   };
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    // if token comes from API, also store it here:
-    // localStorage.setItem("token", userData.token);
-    showFlash(`Welcome ${userData.name}!`);
+  const login = (userData, token) => {
+    // Ensure userData has "name" key for flash and navbar
+    const mappedUser = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name || userData.username, // fallback to username
+    };
+
+    setUser(mappedUser);
+    localStorage.setItem("user", JSON.stringify(mappedUser));
+    if (token) localStorage.setItem("token", token);
+
+    showFlash(`Welcome ${mappedUser.name}!`);
   };
 
   const handleLogout = () => {
