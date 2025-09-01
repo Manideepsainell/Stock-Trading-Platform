@@ -1,40 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
+import { AuthContext } from "./AuthContext"; // ✅ import context
 
 function Signup() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext); // ✅ get login function
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await axios.post(
-      `${process.env.REACT_APP_API_URL}/api/auth/signup`, // live backend
-      form,
-      { headers: { "Content-Type": "application/json" } }
-    );
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/auth/signup`,
+        form,
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-    console.log("🔹 Signup response:", res.data);
+      console.log("🔹 Signup response:", res.data);
 
-    if (res.data && res.data.token) {
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/product");
-    } else {
-      alert("Signup failed: No token received");
+      if (res.data && res.data.token) {
+        // ✅ update context state so navbar reacts
+        login(res.data.user);
+
+        // ✅ store token in localStorage (optional, but kept)
+        localStorage.setItem("token", res.data.token);
+
+        navigate("/product");
+      } else {
+        alert("Signup failed: No token received");
+      }
+    } catch (err) {
+      console.error(
+        "🔥 Frontend Signup error:",
+        err.response ? err.response.data : err.message
+      );
+      alert("Signup failed!");
     }
-  } catch (err) {
-    console.error(
-      "🔥 Frontend Signup error:",
-      err.response ? err.response.data : err.message
-    );
-    alert("Signup failed!");
-  }
-};
-
+  };
 
   return (
     <div className="auth-wrapper">
@@ -64,9 +68,8 @@ const handleSubmit = async (e) => {
         <p>
           Already have an account?{" "}
           <Link to="/login" style={{ textDecoration: "none", color: "#387ed1" }}>
-  Login
-</Link>
-
+            Login
+          </Link>
         </p>
       </div>
     </div>
