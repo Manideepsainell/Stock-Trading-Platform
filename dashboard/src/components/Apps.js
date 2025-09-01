@@ -1,7 +1,17 @@
-import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./Login";
+import Dashboard from "./Dashboard";
 
-const Apps = () => {
-  return <h1>Apps</h1>;
-};
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard/*" element={<Dashboard />} /> 
+        {/* notice the * for nested routes */}
+      </Routes>
+    </Router>
+  );
+}
 
-export default Apps;
+export default App;
