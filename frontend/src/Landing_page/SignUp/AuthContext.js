@@ -6,48 +6,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [flash, setFlash] = useState("");
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
+    const savedUser = sessionStorage.getItem("user");
+    const token = sessionStorage.getItem("token");
 
     if (savedUser && token) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (err) {
-        console.error("Failed to parse user from localStorage:", err);
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        setUser(null);
-      }
+      setUser(JSON.parse(savedUser));
+    } else {
+      handleLogout();
     }
-    // Do NOT auto-logout immediately; let login handle invalid token later
   }, []);
 
   const showFlash = (message) => {
     setFlash(message);
-    setTimeout(() => setFlash(""), 3000); // auto-clear after 3 sec
+    setTimeout(() => setFlash(""), 3000);
   };
 
-  const login = (userData, token) => {
-    // Ensure userData has "name" key for flash and navbar
-    const mappedUser = {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name || userData.username, // fallback to username
-    };
-
-    setUser(mappedUser);
-    localStorage.setItem("user", JSON.stringify(mappedUser));
-    if (token) localStorage.setItem("token", token);
-
-    showFlash(`Welcome ${mappedUser.name}!`);
+  const login = (userData) => {
+    setUser(userData);
+    sessionStorage.setItem("user", JSON.stringify(userData));
+    sessionStorage.setItem("token", userData.token || "");
+    showFlash(`Welcome ${userData.name}!`);
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
   };
 
   const logout = () => {
