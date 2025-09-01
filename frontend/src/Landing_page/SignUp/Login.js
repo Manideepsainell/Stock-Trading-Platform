@@ -11,7 +11,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:3002/api/auth/login", form, {
+      const res = await axios.post (`${process.env.REACT_APP_API_URL}/api/auth/login`, form, {
         headers: { "Content-Type": "application/json" },
       });
 

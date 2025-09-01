@@ -11,9 +11,11 @@ function Signup() {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const res = await axios.post("http://localhost:3002/api/auth/signup", form, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/auth/signup`, // live backend
+      form,
+      { headers: { "Content-Type": "application/json" } }
+    );
 
     console.log("🔹 Signup response:", res.data);
 
@@ -25,11 +27,13 @@ const handleSubmit = async (e) => {
       alert("Signup failed: No token received");
     }
   } catch (err) {
-    console.error("🔥 Frontend Signup error:", err.response ? err.response.data : err.message);
+    console.error(
+      "🔥 Frontend Signup error:",
+      err.response ? err.response.data : err.message
+    );
     alert("Signup failed!");
   }
 };
-
 
 
   return (
