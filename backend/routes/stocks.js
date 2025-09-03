@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/:symbol", async (req, res) => {
   try {
     const symbol = req.params.symbol; // e.g., RELIANCE:NSE
-    const url = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${process.env.TWELVE_API_KEY}`;
+     const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${process.env.FINNHUB_API_KEY}`;
 
     const response = await axios.get(url);
     res.json(response.data);
