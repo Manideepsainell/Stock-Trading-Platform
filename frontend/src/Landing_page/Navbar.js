@@ -1,9 +1,22 @@
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import { AuthContext } from './SignUp/AuthContext';
 
 function Navbar() {
-  const { user, logout, flash } = useContext(AuthContext);
+  const { user, logout, flash, showFlash } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleDashboardClick = () => {
+    if (user) {
+      // ✅ Logged in → go to dashboard
+      navigate("/dashboard");
+    } else {
+      // ❌ Not logged in → show flash message
+      showFlash("Please login to go to dashboard");
+      navigate("/login");
+    }
+  };
 
   return (
     <>
@@ -25,7 +38,8 @@ function Navbar() {
           textAlign: "left",
           letterSpacing: "0.2px",
           backdropFilter: "blur(6px)",
-          border: "1px solid rgba(255,255,255,0.15)"
+          border: "1px solid rgba(255,255,255,0.15)",
+          transition: "opacity 0.5s ease-in-out"
         }}>
           {flash}
         </div>
@@ -65,15 +79,13 @@ function Navbar() {
           </div>
 
           {/* Hamburger Menu (Dashboard) */}
-          {user && (
-            <div
-              onClick={() => window.location.href = "https://main.dnhat8qvs6b5l.amplifyapp.com/"}
-              style={{ cursor: "pointer", fontSize: "24px" }}
-              title="Go to Dashboard"
-            >
-              &#9776;
-            </div>
-          )}
+          <div
+            onClick={handleDashboardClick}
+            style={{ cursor: "pointer", fontSize: "24px" }}
+            title="Go to Dashboard"
+          >
+            &#9776;
+          </div>
         </div>
       </nav>
     </>

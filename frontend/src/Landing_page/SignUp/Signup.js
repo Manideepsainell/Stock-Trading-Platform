@@ -33,7 +33,7 @@ function Signup() {
       }
     } catch (err) {
       console.error(
-        "🔥 Frontend Signup error:",
+        " Frontend Signup error:",
         err.response ? err.response.data : err.message
       );
       alert("Signup failed!");

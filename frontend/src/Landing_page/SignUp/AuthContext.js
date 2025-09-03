@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // ✅ reusable flash setter
   const showFlash = (message) => {
     setFlash(message);
     setTimeout(() => setFlash(""), 3000);
@@ -41,7 +42,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, flash }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        flash,
+        showFlash,   // ✅ expose this so Navbar can use it
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
