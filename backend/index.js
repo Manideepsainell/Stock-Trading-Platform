@@ -9,6 +9,8 @@ const { PositionsModel } = require("./model/PositionsModel");
 const { OrdersModel } = require("./model/OrdersModel");
 
 const authRoutes = require("./routes/auth");
+const stockRoutes = require("./routes/stocks");
+
 const protect = require("./middleware/authmiddleware");
 
 const PORT = process.env.PORT || 3002;
@@ -41,6 +43,8 @@ app.use(express.json());
 // ===== Auth Routes =====
 app.use("/api/auth", authRoutes);
 
+app.use("/api/stocks", stockRoutes);
+
 // ===== Database Connect =====
 mongoose.connect(uri)
   .then(() => {
@@ -54,34 +58,33 @@ mongoose.connect(uri)
   });
 
 // ===== Routes =====
+// index.js (or wherever your routes are)
 app.get("/allHoldings", protect, async (req, res) => {
-  const allHoldings = await HoldingsModel.find({});
+  const allHoldings = await HoldingsModel.find({ userId: req.user.id });
   res.json(allHoldings);
 });
 
 app.get("/allPositions", protect, async (req, res) => {
-  const allPositions = await PositionsModel.find({});
+  const allPositions = await PositionsModel.find({ userId: req.user.id });
   res.json(allPositions);
 });
 
 app.get("/allOrders", protect, async (req, res) => {
-  const allOrders = await OrdersModel.find().sort({ createdAt: -1 });
+  const allOrders = await OrdersModel.find({ userId: req.user.id }).sort({ createdAt: -1 });
   res.json(allOrders);
 });
 
 app.post("/newOrder", protect, async (req, res) => {
-  try {
-    const { name, qty, price, mode } = req.body;
-    if (!name || qty == null || price == null || !mode) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const newOrder = new OrdersModel({ name, qty: Number(qty), price: Number(price), mode });
-    await newOrder.save();
-    res.status(201).json({ message: "Order placed", order: newOrder });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
+  const { name, qty, price, mode } = req.body;
+  const newOrder = new OrdersModel({
+    name,
+    qty: Number(qty),
+    price: Number(price),
+    mode,
+    userId: req.user.id, // assign order to logged-in user
+  });
+  await newOrder.save();
+  res.status(201).json({ message: "Order placed", order: newOrder });
 });
 
 // Optional: Seed routes (for testing only)
