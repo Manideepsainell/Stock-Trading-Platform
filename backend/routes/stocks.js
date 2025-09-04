@@ -57,7 +57,7 @@ router.get("/nifty/all", async (req, res) => {
 });
 
 
-
+// Watchlist route
 router.get("/watchlist", async (req, res) => {
   try {
     const data = await fetchStocks(watchlistSymbols);
@@ -66,7 +66,10 @@ router.get("/watchlist", async (req, res) => {
     console.error("Error fetching watchlist:", error.message);
     res.status(500).json({ error: "Failed to fetch watchlist" });
   }
-  router.get("/:symbol", async (req, res) => {
+});
+
+// Single stock route (move OUTSIDE)
+router.get("/:symbol", async (req, res) => {
   try {
     const input = req.params.symbol.toUpperCase();
 
@@ -99,6 +102,6 @@ router.get("/watchlist", async (req, res) => {
     console.error("Error fetching Yahoo Finance stock:", error.message);
     res.status(500).json({ error: "Failed to fetch stock data" });
   }
-})
 });
+
 module.exports = router;

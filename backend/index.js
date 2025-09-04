@@ -22,10 +22,35 @@ const uri = process.env.MONGO_URL;
 const app = express();
 
 // ===== Middleware =====
-app.use(cors({
-  origin: "*",      // allow all origins
-  credentials: true // allows cookies and auth headers
-}));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://main.d1trzlmgp9l0ln.amplifyapp.com",
+  "https://main.dnhat8qvs6b5l.amplifyapp.com"
+];
+
+// General middleware
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/stocks")) {
+    // Public endpoints → allow all origins
+    res.header("Access-Control-Allow-Origin", "*");
+  } else {
+    // Authenticated endpoints → allow only your frontends
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Credentials", "true");
+    }
+  }
+  
+  // Common headers
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  
+  // Handle preflight
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+
+  next();
+});
 
 
 app.use(cookieParser());
