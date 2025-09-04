@@ -24,7 +24,8 @@ const app = express();
 // ===== Middleware =====
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://main.d3c9ylvigombeq.amplifyapp.com"
+  "https://main.d3c9ylvigombeq.amplifyapp.com",
+  "https://main.d1trzlmgp9l0ln.amplifyapp.com"
 ];
 
 app.use(cors({
