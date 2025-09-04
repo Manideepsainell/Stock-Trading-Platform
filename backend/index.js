@@ -3,8 +3,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
-
 const yahooFinance = require("yahoo-finance2").default;
 
 const { HoldingsModel } = require("./model/HoldingsModel");
@@ -13,7 +11,6 @@ const { OrdersModel } = require("./model/OrdersModel");
 
 const authRoutes = require("./routes/auth");
 const stockRoutes = require("./routes/stocks");
-
 const protect = require("./middleware/authmiddleware");
 
 const PORT = process.env.PORT || 3002;
@@ -22,67 +19,33 @@ const uri = process.env.MONGO_URL;
 const app = express();
 
 // ===== Middleware =====
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://main.d1trzlmgp9l0ln.amplifyapp.com",
-  "https://main.dnhat8qvs6b5l.amplifyapp.com"
-];
-
-// General middleware
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api/stocks")) {
-    // Public endpoints → allow all origins
-    res.header("Access-Control-Allow-Origin", "*");
-  } else {
-    // Authenticated endpoints → allow only your frontends
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header("Access-Control-Allow-Credentials", "true");
-    }
-  }
-  
-  // Common headers
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  
-  // Handle preflight
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-
-  next();
-});
-
-
+// Universal CORS for simplicity
+app.use(cors({ origin: "*", credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
 
-// ===== Auth Routes =====
+// ===== Auth & Stock Routes =====
 app.use("/api/auth", authRoutes);
-
 app.use("/api/stocks", stockRoutes);
 app.use("/api/summary", require("./routes/summary"));
-
 
 // ===== Database Connect =====
 mongoose.connect(uri)
   .then(() => {
     console.log("✅ DB connected");
-    app.listen(PORT, () => {
-      console.log(`🚀 Server started on http://localhost:${PORT}`);
-    });
+    app.listen(PORT, () => console.log(`🚀 Server started on http://localhost:${PORT}`));
   })
-  .catch(err => {
-    console.error("❌ DB connection failed:", err);
-  });
+  .catch(err => console.error("❌ DB connection failed:", err));
 
-// ===== Routes =====
+// ===== User Data Routes =====
 
+// Holdings
 app.get("/allHoldings", protect, async (req, res) => {
   try {
     const allHoldings = await HoldingsModel.find({ userId: req.user.id });
+    if (!allHoldings || allHoldings.length === 0) return res.json([]); // empty for new users
 
-    const updatedHoldingsPromises = allHoldings.map(async (holding) => {
-      // Map your DB name to Yahoo Finance symbol
+    const updatedHoldings = await Promise.all(allHoldings.map(async (holding) => {
       const symbolMap = {
         RELIANCE: "RELIANCE.NS",
         TCS: "TCS.NS",
@@ -93,37 +56,27 @@ app.get("/allHoldings", protect, async (req, res) => {
         KOTAKBANK: "KOTAKBANK.NS",
         SBIN: "SBIN.NS",
       };
-
       const symbol = symbolMap[holding.name] || `${holding.name}.NS`;
-
       const quote = await yahooFinance.quote(symbol);
-
       const curValue = quote.regularMarketPrice * holding.qty;
       const net = curValue - holding.avg * holding.qty;
-      const isLoss = net < 0;
+      return { ...holding._doc, price: quote.regularMarketPrice, day: quote.regularMarketChange.toFixed(2), net: net.toFixed(2), isLoss: net < 0 };
+    }));
 
-      return {
-        ...holding._doc,       // include all DB fields
-        price: quote.regularMarketPrice,
-        day: quote.regularMarketChange.toFixed(2),
-        net: net.toFixed(2),
-        isLoss,
-      };
-    });
-
-    const updatedHoldings = await Promise.all(updatedHoldingsPromises);
     res.json(updatedHoldings);
-  } catch (error) {
-    console.error("Error fetching live holdings:", error.message);
-    res.status(500).json({ error: "Failed to fetch live holdings" });
+  } catch (err) {
+    console.error("Error fetching holdings:", err.message);
+    res.status(500).json({ error: "Failed to fetch holdings" });
   }
 });
 
+// Positions
 app.get("/allPositions", protect, async (req, res) => {
   try {
     const allPositions = await PositionsModel.find({ userId: req.user.id });
+    if (!allPositions || allPositions.length === 0) return res.json([]);
 
-    const updatedPositionsPromises = allPositions.map(async (position) => {
+    const updatedPositions = await Promise.all(allPositions.map(async (position) => {
       const symbolMap = {
         RELIANCE: "RELIANCE.NS",
         TCS: "TCS.NS",
@@ -134,38 +87,27 @@ app.get("/allPositions", protect, async (req, res) => {
         KOTAKBANK: "KOTAKBANK.NS",
         SBIN: "SBIN.NS",
       };
-
       const symbol = symbolMap[position.name] || `${position.name}.NS`;
-
       const quote = await yahooFinance.quote(symbol);
-
       const curValue = quote.regularMarketPrice * position.qty;
       const net = curValue - position.avg * position.qty;
-      const isLoss = net < 0;
+      return { ...position._doc, price: quote.regularMarketPrice, day: quote.regularMarketChange.toFixed(2), net: net.toFixed(2), isLoss: net < 0 };
+    }));
 
-      return {
-        ...position._doc,
-        price: quote.regularMarketPrice,
-        day: quote.regularMarketChange.toFixed(2),
-        net: net.toFixed(2),
-        isLoss,
-      };
-    });
-
-    const updatedPositions = await Promise.all(updatedPositionsPromises);
     res.json(updatedPositions);
-  } catch (error) {
-    console.error("Error fetching live positions:", error.message);
-    res.status(500).json({ error: "Failed to fetch live positions" });
+  } catch (err) {
+    console.error("Error fetching positions:", err.message);
+    res.status(500).json({ error: "Failed to fetch positions" });
   }
 });
 
-
+// Orders
 app.get("/allOrders", protect, async (req, res) => {
   try {
     const allOrders = await OrdersModel.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    if (!allOrders || allOrders.length === 0) return res.json([]);
 
-    const updatedOrdersPromises = allOrders.map(async (order) => {
+    const updatedOrders = await Promise.all(allOrders.map(async (order) => {
       const symbolMap = {
         RELIANCE: "RELIANCE.NS",
         TCS: "TCS.NS",
@@ -176,37 +118,27 @@ app.get("/allOrders", protect, async (req, res) => {
         KOTAKBANK: "KOTAKBANK.NS",
         SBIN: "SBIN.NS",
       };
-
       const symbol = symbolMap[order.name] || `${order.name}.NS`;
-
       const quote = await yahooFinance.quote(symbol);
+      return { ...order._doc, price: quote.regularMarketPrice };
+    }));
 
-      return {
-        ...order._doc,
-        price: quote.regularMarketPrice,
-      };
-    });
-
-    const updatedOrders = await Promise.all(updatedOrdersPromises);
     res.json(updatedOrders);
-  } catch (error) {
-    console.error("Error fetching live orders:", error.message);
-    res.status(500).json({ error: "Failed to fetch live orders" });
+  } catch (err) {
+    console.error("Error fetching orders:", err.message);
+    res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
 
-
+// New Order
 app.post("/newOrder", protect, async (req, res) => {
-  const { name, qty, price, mode } = req.body;
-  const newOrder = new OrdersModel({
-    name,
-    qty: Number(qty),
-    price: Number(price),
-    mode,
-    userId: req.user.id, // assign order to logged-in user
-  });
-  await newOrder.save();
-  res.status(201).json({ message: "Order placed", order: newOrder });
+  try {
+    const { name, qty, price, mode } = req.body;
+    const newOrder = new OrdersModel({ name, qty: Number(qty), price: Number(price), mode, userId: req.user.id });
+    await newOrder.save();
+    res.status(201).json({ message: "Order placed", order: newOrder });
+  } catch (err) {
+    console.error("Error creating order:", err.message);
+    res.status(500).json({ error: "Failed to create order" });
+  }
 });
-
-// Optional: Seed routes (for testing only)
