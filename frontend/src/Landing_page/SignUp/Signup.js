@@ -1,13 +1,12 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext"; // ✅ import context
+import { useNavigate, Link } from "react-router-dom";
+import { AuthContext } from "./AuthContext";
 
 function Signup() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // ✅ get login function
+  const { login } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,10 +20,10 @@ function Signup() {
       console.log("🔹 Signup response:", res.data);
 
       if (res.data && res.data.token) {
-        // ✅ update context state so navbar reacts
-        login(res.data.user);
+        // ✅ pass both user and token
+        login(res.data.user, res.data.token);
 
-        // ✅ store token in localStorage (optional, but kept)
+        // ✅ also keep in localStorage (optional)
         localStorage.setItem("token", res.data.token);
 
         navigate("/product");
@@ -33,7 +32,7 @@ function Signup() {
       }
     } catch (err) {
       console.error(
-        " Frontend Signup error:",
+        "Frontend Signup error:",
         err.response ? err.response.data : err.message
       );
       alert("Signup failed!");

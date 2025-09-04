@@ -23,11 +23,12 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => setFlash(""), 3000);
   };
 
-  const login = (userData) => {
+  // ✅ now accepts user + token separately
+  const login = (userData, token) => {
     setUser(userData);
     sessionStorage.setItem("user", JSON.stringify(userData));
-    sessionStorage.setItem("token", userData.token || "");
-    showFlash(`Welcome ${userData.name}!`);
+    sessionStorage.setItem("token", token);
+    showFlash(`Welcome ${userData.username || userData.name}!`);
   };
 
   const handleLogout = () => {
@@ -48,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         flash,
-        showFlash,   // ✅ expose this so Navbar can use it
+        showFlash, // ✅ expose this so Navbar can use it
       }}
     >
       {children}
