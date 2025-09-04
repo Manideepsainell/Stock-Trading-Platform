@@ -17,22 +17,15 @@ function Signup() {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      console.log("🔹 Signup response:", res.data);
-
       if (res.data && res.data.token) {
-        // ✅ pass both user and token
         login(res.data.user, res.data.token);
-
-        // ✅ also keep in localStorage (optional)
-        localStorage.setItem("token", res.data.token);
-
-        navigate("/product");
+        setTimeout(() => navigate("/product"), 500);
       } else {
         alert("Signup failed: No token received");
       }
     } catch (err) {
       console.error(
-        "Frontend Signup error:",
+        "Signup error:",
         err.response ? err.response.data : err.message
       );
       alert("Signup failed!");

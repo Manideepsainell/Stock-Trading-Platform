@@ -11,26 +11,31 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post (`${process.env.REACT_APP_API_URL}/api/auth/login`, form, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/auth/login`,
+        form,
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-      if (res.data.token) {
-  localStorage.setItem("token", res.data.token);
+      if (res.data && res.data.token) {
+        const userData = {
+          id: res.data.user.id,
+          username: res.data.user.username,
+          email: res.data.user.email,
+        };
 
-  const userData = { 
-    email: res.data.user.email, 
-    name: res.data.user.username // <-- FIXED: get corraect key
-  };
-        login(userData);
+        login(userData, res.data.token);
 
-        // Slight delay to allow flash to appear before navigation
+        // slight delay so flash shows before redirect
         setTimeout(() => navigate("/product"), 500);
       } else {
         alert("Invalid login");
       }
     } catch (err) {
-      console.error("Login error:", err.response ? err.response.data : err.message);
+      console.error(
+        "Login error:",
+        err.response ? err.response.data : err.message
+      );
       alert("Login failed!");
     }
   };

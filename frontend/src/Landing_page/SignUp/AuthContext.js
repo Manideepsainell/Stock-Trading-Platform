@@ -7,13 +7,11 @@ export const AuthProvider = ({ children }) => {
   const [flash, setFlash] = useState("");
 
   useEffect(() => {
-    const savedUser = sessionStorage.getItem("user");
-    const token = sessionStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
 
     if (savedUser && token) {
       setUser(JSON.parse(savedUser));
-    } else {
-      handleLogout();
     }
   }, []);
 
@@ -23,18 +21,18 @@ export const AuthProvider = ({ children }) => {
     setTimeout(() => setFlash(""), 3000);
   };
 
-  // ✅ now accepts user + token separately
+  // ✅ accepts user + token separately
   const login = (userData, token) => {
     setUser(userData);
-    sessionStorage.setItem("user", JSON.stringify(userData));
-    sessionStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", token);
     showFlash(`Welcome ${userData.username || userData.name}!`);
   };
 
   const handleLogout = () => {
     setUser(null);
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   const logout = () => {
@@ -49,7 +47,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         flash,
-        showFlash, // ✅ expose this so Navbar can use it
+        showFlash, // ✅ expose for Navbar use
       }}
     >
       {children}
