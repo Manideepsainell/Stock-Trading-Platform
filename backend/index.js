@@ -22,22 +22,9 @@ const uri = process.env.MONGO_URL;
 const app = express();
 
 // ===== Middleware =====
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://main.d3c9ylvigombeq.amplifyapp.com",
-  "https://main.d1trzlmgp9l0ln.amplifyapp.com"
-];
-
 app.use(cors({
-  origin: function(origin, callback){
-    if(!origin) return callback(null, true); // allow REST tools like Postman
-    if(allowedOrigins.indexOf(origin) === -1){
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true
+  origin: "*",      // allow all origins
+  credentials: true // allows cookies and auth headers
 }));
 
 
