@@ -7,16 +7,16 @@ function Navbar() {
   const { user, logout, flash, showFlash } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleDashboardClick = () => {
-    if (user) {
-      // ✅ Logged in → go to dashboard
-      navigate("/dashboard");
-    } else {
-      // ❌ Not logged in → show flash message
-      showFlash("Please login to go to dashboard");
-      navigate("/login");
-    }
-  };
+const handleDashboardClick = () => {
+  if (user) {
+    // ✅ Logged in → go to external dashboard
+    window.location.href = "https://main.dnhat8qvs6b5l.amplifyapp.com/";
+  } else {
+    // ❌ Not logged in → show flash message and send to login page
+    showFlash("Please login to go to dashboard");
+    navigate("/login");
+  }
+};
 
   return (
     <>
