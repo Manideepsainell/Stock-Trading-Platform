@@ -1,144 +1,110 @@
-require("dotenv").config();
+// routes/userData.js
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const yahooFinance = require("yahoo-finance2").default;
+const { HoldingsModel } = require("../model/HoldingsModel");
+const { PositionsModel } = require("../model/PositionsModel");
+const { OrdersModel } = require("../model/OrdersModel");
+const protect = require("../middleware/authmiddleware");
 
-const { HoldingsModel } = require("./model/HoldingsModel");
-const { PositionsModel } = require("./model/PositionsModel");
-const { OrdersModel } = require("./model/OrdersModel");
+const router = express.Router();
 
-const authRoutes = require("./routes/auth");
-const stockRoutes = require("./routes/stocks");
-const protect = require("./middleware/authmiddleware");
+// Map DB names to Yahoo Finance symbols
+const symbolMap = {
+  RELIANCE: "RELIANCE.NS",
+  TCS: "TCS.NS",
+  INFY: "INFY.NS",
+  HDFCBANK: "HDFCBANK.NS",
+  ICICIBANK: "ICICIBANK.NS",
+  ITC: "ITC.NS",
+  KOTAKBANK: "KOTAKBANK.NS",
+  SBIN: "SBIN.NS",
+};
 
-const PORT = process.env.PORT || 3002;
-const uri = process.env.MONGO_URL;
-
-const app = express();
-
-// ===== Middleware =====
-// Universal CORS for simplicity
-app.use(cors({ origin: "*", credentials: true }));
-app.use(cookieParser());
-app.use(express.json());
-
-// ===== Auth & Stock Routes =====
-app.use("/api/auth", authRoutes);
-app.use("/api/stocks", stockRoutes);
-app.use("/api/summary", require("./routes/summary"));
-
-// ===== Database Connect =====
-mongoose.connect(uri)
-  .then(() => {
-    console.log("✅ DB connected");
-    app.listen(PORT, () => console.log(`🚀 Server started on http://localhost:${PORT}`));
-  })
-  .catch(err => console.error("❌ DB connection failed:", err));
-
-// ===== User Data Routes =====
-
-// Holdings
-app.get("/allHoldings", protect, async (req, res) => {
+// Utility function to fetch live price safely
+async function fetchPrice(symbol) {
   try {
-    const allHoldings = await HoldingsModel.find({ userId: req.user.id });
-    if (!allHoldings || allHoldings.length === 0) return res.json([]); // empty for new users
-
-    const updatedHoldings = await Promise.all(allHoldings.map(async (holding) => {
-      const symbolMap = {
-        RELIANCE: "RELIANCE.NS",
-        TCS: "TCS.NS",
-        INFY: "INFY.NS",
-        HDFCBANK: "HDFCBANK.NS",
-        ICICIBANK: "ICICIBANK.NS",
-        ITC: "ITC.NS",
-        KOTAKBANK: "KOTAKBANK.NS",
-        SBIN: "SBIN.NS",
-      };
-      const symbol = symbolMap[holding.name] || `${holding.name}.NS`;
-      const quote = await yahooFinance.quote(symbol);
-      const curValue = quote.regularMarketPrice * holding.qty;
-      const net = curValue - holding.avg * holding.qty;
-      return { ...holding._doc, price: quote.regularMarketPrice, day: quote.regularMarketChange.toFixed(2), net: net.toFixed(2), isLoss: net < 0 };
-    }));
-
-    res.json(updatedHoldings);
+    const quote = await yahooFinance.quote(symbol);
+    return {
+      price: quote?.regularMarketPrice || 0,
+      day: quote?.regularMarketChange?.toFixed(2) || 0,
+    };
   } catch (err) {
-    console.error("Error fetching holdings:", err.message);
-    res.status(500).json({ error: "Failed to fetch holdings" });
+    console.error(`Yahoo fetch error for ${symbol}:`, err.message);
+    return { price: 0, day: 0 };
+  }
+}
+
+// ===== Holdings =====
+router.get("/allHoldings", protect, async (req, res) => {
+  try {
+    const holdings = await HoldingsModel.find({ userId: req.user.id }) || [];
+    const updated = await Promise.all(
+      holdings.map(async (h) => {
+        const { price, day } = await fetchPrice(symbolMap[h.name] || `${h.name}.NS`);
+        const curValue = price * h.qty;
+        const net = curValue - h.avg * h.qty;
+        return { ...h._doc, price, day, net: net.toFixed(2), isLoss: net < 0 };
+      })
+    );
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
   }
 });
 
-// Positions
-app.get("/allPositions", protect, async (req, res) => {
+// ===== Positions =====
+router.get("/allPositions", protect, async (req, res) => {
   try {
-    const allPositions = await PositionsModel.find({ userId: req.user.id });
-    if (!allPositions || allPositions.length === 0) return res.json([]);
-
-    const updatedPositions = await Promise.all(allPositions.map(async (position) => {
-      const symbolMap = {
-        RELIANCE: "RELIANCE.NS",
-        TCS: "TCS.NS",
-        INFY: "INFY.NS",
-        HDFCBANK: "HDFCBANK.NS",
-        ICICIBANK: "ICICIBANK.NS",
-        ITC: "ITC.NS",
-        KOTAKBANK: "KOTAKBANK.NS",
-        SBIN: "SBIN.NS",
-      };
-      const symbol = symbolMap[position.name] || `${position.name}.NS`;
-      const quote = await yahooFinance.quote(symbol);
-      const curValue = quote.regularMarketPrice * position.qty;
-      const net = curValue - position.avg * position.qty;
-      return { ...position._doc, price: quote.regularMarketPrice, day: quote.regularMarketChange.toFixed(2), net: net.toFixed(2), isLoss: net < 0 };
-    }));
-
-    res.json(updatedPositions);
+    const positions = await PositionsModel.find({ userId: req.user.id }) || [];
+    const updated = await Promise.all(
+      positions.map(async (p) => {
+        const { price, day } = await fetchPrice(symbolMap[p.name] || `${p.name}.NS`);
+        const curValue = price * p.qty;
+        const net = curValue - p.avg * p.qty;
+        return { ...p._doc, price, day, net: net.toFixed(2), isLoss: net < 0 };
+      })
+    );
+    res.json(updated);
   } catch (err) {
-    console.error("Error fetching positions:", err.message);
-    res.status(500).json({ error: "Failed to fetch positions" });
+    console.error(err);
+    res.status(500).json([]);
   }
 });
 
-// Orders
-app.get("/allOrders", protect, async (req, res) => {
+// ===== Orders =====
+router.get("/allOrders", protect, async (req, res) => {
   try {
-    const allOrders = await OrdersModel.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    if (!allOrders || allOrders.length === 0) return res.json([]);
-
-    const updatedOrders = await Promise.all(allOrders.map(async (order) => {
-      const symbolMap = {
-        RELIANCE: "RELIANCE.NS",
-        TCS: "TCS.NS",
-        INFY: "INFY.NS",
-        HDFCBANK: "HDFCBANK.NS",
-        ICICIBANK: "ICICIBANK.NS",
-        ITC: "ITC.NS",
-        KOTAKBANK: "KOTAKBANK.NS",
-        SBIN: "SBIN.NS",
-      };
-      const symbol = symbolMap[order.name] || `${order.name}.NS`;
-      const quote = await yahooFinance.quote(symbol);
-      return { ...order._doc, price: quote.regularMarketPrice };
-    }));
-
-    res.json(updatedOrders);
+    const orders = await OrdersModel.find({ userId: req.user.id }).sort({ createdAt: -1 }) || [];
+    const updated = await Promise.all(
+      orders.map(async (o) => {
+        const { price } = await fetchPrice(symbolMap[o.name] || `${o.name}.NS`);
+        return { ...o._doc, price };
+      })
+    );
+    res.json(updated);
   } catch (err) {
-    console.error("Error fetching orders:", err.message);
-    res.status(500).json({ error: "Failed to fetch orders" });
+    console.error(err);
+    res.status(500).json([]);
   }
 });
 
-// New Order
-app.post("/newOrder", protect, async (req, res) => {
+// ===== Place New Order =====
+router.post("/newOrder", protect, async (req, res) => {
   try {
     const { name, qty, price, mode } = req.body;
-    const newOrder = new OrdersModel({ name, qty: Number(qty), price: Number(price), mode, userId: req.user.id });
-    await newOrder.save();
-    res.status(201).json({ message: "Order placed", order: newOrder });
+    const order = await OrdersModel.create({
+      name,
+      qty: Number(qty),
+      price: Number(price),
+      mode,
+      userId: req.user.id,
+    });
+    res.status(201).json(order);
   } catch (err) {
-    console.error("Error creating order:", err.message);
-    res.status(500).json({ error: "Failed to create order" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to place order" });
   }
 });
+
+module.exports = router;
