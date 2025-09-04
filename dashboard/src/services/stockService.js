@@ -1,14 +1,19 @@
-import axios from "axios";
+const BASE_URL = "https://stock-trading-platform-en0s.onrender.com/api/stocks";
 
-// Replace with your backend URL
-const BASE_URL = "https://stock-trading-platform-en0s.onrender.com//api";
-
+// Fetch all Sensex stocks
 export const fetchSensex = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/sensex`);
-    return response.data; // Expecting array of stocks [{symbol, price, change, changePercent}, ...]
-  } catch (error) {
-    console.error("Error fetching Sensex data:", error);
-    return [];
-  }
+  const res = await fetch(`${BASE_URL}/sensex/all`);
+  return await res.json();
+};
+
+// Fetch all Nifty 50 stocks
+export const fetchNifty = async () => {
+  const res = await fetch(`${BASE_URL}/nifty/all`);
+  return await res.json();
+};
+
+// Fetch single stock by symbol
+export const fetchStock = async (symbol) => {
+  const res = await fetch(`${BASE_URL}/${symbol}`);
+  return await res.json();
 };
