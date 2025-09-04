@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:3002/api/stocks";
+// For Amplify deployed frontend
+const BASE_URL = "https://stock-trading-platform-en0s.onrender.com/api/stocks";
+
 
 // Fetch all Sensex stocks
 export const fetchSensex = async () => {
