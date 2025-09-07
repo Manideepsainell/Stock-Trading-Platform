@@ -1,5 +1,5 @@
 // Local development
-const BASE_URL = "https://stock-trading-platform-en0s.onrender.com/api/stocks";
+const BASE_URL = "https://stock-trading-platform-en0s.onrender.com";
 
 // Fetch all Sensex stocks
 export const fetchSensex = async () => {
