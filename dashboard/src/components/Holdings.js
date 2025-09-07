@@ -4,24 +4,18 @@ import { VerticalGraph } from "./VerticalGraph";
 
 const Holdings = () => {
   const [allHoldings, setAllHoldings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchHoldings = async () => {
-      setLoading(true);
-      setError("");
       try {
-        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:3002/allHoldings", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // make sure token is sent
+          },
         });
-        setAllHoldings(res.data || []);
+        setAllHoldings(res.data);
       } catch (err) {
         console.error("Error fetching holdings:", err);
-        setError("Failed to fetch holdings. Please try again later.");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -30,22 +24,14 @@ const Holdings = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <div className="holdings-loading">Loading holdings...</div>;
-  if (error) return <div className="holdings-error">{error}</div>;
-  if (allHoldings.length === 0) return <div className="holdings-empty">No holdings available.</div>;
+  const labels = allHoldings.map((stock) => stock.name);
 
-  // Totals
-  const totalInvested = allHoldings.reduce((acc, s) => acc + (s.avg ?? 0) * (s.qty ?? 0), 0);
-  const currentValue = allHoldings.reduce((acc, s) => acc + (s.price ?? 0) * (s.qty ?? 0), 0);
-  const totalPL = currentValue - totalInvested;
-
-  // Graph data
-  const chartData = {
-    labels: allHoldings.map((stock) => stock.name),
+  const data = {
+    labels,
     datasets: [
       {
         label: "Stock Price",
-        data: allHoldings.map((stock) => stock.price ?? 0),
+        data: allHoldings.map((stock) => stock.price),
         backgroundColor: "rgba(255, 99, 132, 0.5)",
       },
     ],
@@ -70,25 +56,22 @@ const Holdings = () => {
             </tr>
           </thead>
           <tbody>
-            {allHoldings.map((stock) => {
-              const qty = stock.qty ?? 0;
-              const avg = stock.avg ?? 0;
-              const price = stock.price ?? 0;
-              const curValue = price * qty;
-              const pl = curValue - avg * qty;
-              const profClass = pl >= 0 ? "profit" : "loss";
-              const dayClass = (stock.day ?? 0) >= 0 ? "profit" : "loss";
+            {allHoldings.map((stock, index) => {
+              const curValue = stock.price * stock.qty;
+              const isProfit = curValue - stock.avg * stock.qty >= 0;
+              const profClass = isProfit ? "profit" : "loss";
+              const dayClass = stock.isLoss ? "loss" : "profit";
 
               return (
-                <tr key={stock.symbol || stock.id}>
+                <tr key={index}>
                   <td>{stock.name}</td>
-                  <td>{qty}</td>
-                  <td>{avg.toFixed(2)}</td>
-                  <td>{price.toFixed(2)}</td>
+                  <td>{stock.qty}</td>
+                  <td>{stock.avg.toFixed(2)}</td>
+                  <td>{stock.price.toFixed(2)}</td>
                   <td>{curValue.toFixed(2)}</td>
-                  <td className={profClass}>{pl.toFixed(2)}</td>
-                  <td className={profClass}>{stock.net ?? "-"}</td>
-                  <td className={dayClass}>{stock.day ?? "-"}</td>
+                  <td className={profClass}>{(curValue - stock.avg * stock.qty).toFixed(2)}</td>
+                  <td className={profClass}>{stock.net}</td>
+                  <td className={dayClass}>{stock.day}</td>
                 </tr>
               );
             })}
@@ -96,22 +79,31 @@ const Holdings = () => {
         </table>
       </div>
 
-      <div className="row totals">
+      <div className="row">
         <div className="col">
-          <h5>{totalInvested.toFixed(2)}</h5>
+          <h5>
+            {allHoldings.reduce((acc, stock) => acc + stock.avg * stock.qty, 0).toFixed(2)}
+          </h5>
           <p>Total investment</p>
         </div>
         <div className="col">
-          <h5>{currentValue.toFixed(2)}</h5>
+          <h5>
+            {allHoldings.reduce((acc, stock) => acc + stock.price * stock.qty, 0).toFixed(2)}
+          </h5>
           <p>Current value</p>
         </div>
         <div className="col">
-          <h5>{totalPL.toFixed(2)}</h5>
+          <h5>
+            {(
+              allHoldings.reduce((acc, stock) => acc + stock.price * stock.qty, 0) -
+              allHoldings.reduce((acc, stock) => acc + stock.avg * stock.qty, 0)
+            ).toFixed(2)}
+          </h5>
           <p>P&L</p>
         </div>
       </div>
 
-      <VerticalGraph data={chartData} />
+      <VerticalGraph data={data} />
     </>
   );
 };

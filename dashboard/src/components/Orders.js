@@ -5,21 +5,17 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchOrders = async () => {
-      setLoading(true);
-      setError("");
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token"); // 🔑 grab JWT
         const res = await axios.get("http://localhost:3002/api/allOrders", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setOrders(res.data || []);
+        setOrders(res.data);
       } catch (err) {
         console.error("Error fetching orders:", err);
-        setError("Failed to fetch orders. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -28,9 +24,7 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  const toggleExpand = (id, event) => {
-    // Prevent expand toggle if a button inside card is clicked
-    if (event?.target.tagName === "BUTTON") return;
+  const toggleExpand = (id) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
@@ -38,14 +32,10 @@ const Orders = () => {
     return <div className="orders-loading">Loading your orders...</div>;
   }
 
-  if (error) {
-    return <div className="orders-error">{error}</div>;
-  }
-
   if (orders.length === 0) {
     return (
       <div className="orders-empty">
-        <p>You haven't placed any orders today.</p>
+        <p>You haven't placed any orders today</p>
       </div>
     );
   }
@@ -56,26 +46,31 @@ const Orders = () => {
       <div className="orders-list">
         {orders.map((order) => (
           <div
-            className={`order-card ${expandedId === order._id ? "expanded" : ""}`}
+            className={`order-card ${
+              expandedId === order._id ? "expanded" : ""
+            }`}
             key={order._id}
-            onClick={(e) => toggleExpand(order._id, e)}
+            onClick={() => toggleExpand(order._id)}
           >
             <div className="order-header">
               <h3 className="order-name">{order.name}</h3>
-              <span className={`order-mode ${order.mode === "BUY" ? "buy" : "sell"}`}>
+              <span
+                className={`order-mode ${
+                  order.mode === "BUY" ? "buy" : "sell"
+                }`}
+              >
                 {order.mode}
               </span>
             </div>
-
             <div className="order-details">
               <p>
                 <strong>Quantity:</strong> {order.qty}
               </p>
               <p>
-                <strong>Price:</strong> ₹{order.price?.toFixed(2)}
+                <strong>Price:</strong> ₹{order.price}
               </p>
               <p className="order-date">
-                {order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}
+                {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
 
@@ -86,11 +81,11 @@ const Orders = () => {
                 </p>
                 <p>
                   <strong>Created:</strong>{" "}
-                  {order.createdAt ? new Date(order.createdAt).toString() : "-"}
+                  {new Date(order.createdAt).toString()}
                 </p>
                 <p>
                   <strong>Last Updated:</strong>{" "}
-                  {order.updatedAt ? new Date(order.updatedAt).toString() : "-"}
+                  {new Date(order.updatedAt).toString()}
                 </p>
                 {/* Future details: status, fees, etc. */}
               </div>

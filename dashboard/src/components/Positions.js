@@ -3,33 +3,22 @@ import axios from "axios";
 
 const Positions = () => {
   const [positions, setPositions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchPositions = async () => {
-      setLoading(true);
-      setError("");
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token"); // 🔑 get JWT
         const res = await axios.get("http://localhost:3002/api/allPositions", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setPositions(res.data || []);
+        setPositions(res.data);
       } catch (err) {
         console.error("Error fetching positions:", err);
-        setError("Failed to fetch positions. Please try again later.");
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchPositions();
   }, []);
-
-  if (loading) return <div className="positions-loading">Loading positions...</div>;
-  if (error) return <div className="positions-error">{error}</div>;
-  if (positions.length === 0) return <div className="positions-empty">No positions available.</div>;
 
   return (
     <>
@@ -49,26 +38,23 @@ const Positions = () => {
             </tr>
           </thead>
           <tbody>
-            {positions.map((stock) => {
-              const qty = stock.qty ?? 0;
-              const avg = stock.avg ?? 0;
-              const price = stock.price ?? 0;
-              const dayChange = stock.day ?? 0;
-
-              const curValue = price * qty;
-              const pl = curValue - avg * qty;
-              const profClass = pl >= 0 ? "profit" : "loss";
-              const dayClass = dayChange >= 0 ? "profit" : "loss";
+            {positions.map((stock, index) => {
+              const curValue = stock.price * stock.qty;
+              const isProfit = curValue - stock.avg * stock.qty >= 0.0;
+              const profClass = isProfit ? "profit" : "loss";
+              const dayClass = stock.isLoss ? "loss" : "profit";
 
               return (
-                <tr key={stock.symbol || stock.id}>
+                <tr key={index}>
                   <td>{stock.product}</td>
                   <td>{stock.name}</td>
-                  <td>{qty}</td>
-                  <td>{avg.toFixed(2)}</td>
-                  <td>{price.toFixed(2)}</td>
-                  <td className={profClass}>{pl.toFixed(2)}</td>
-                  <td className={dayClass}>{dayChange}</td>
+                  <td>{stock.qty}</td>
+                  <td>{stock.avg.toFixed(2)}</td>
+                  <td>{stock.price.toFixed(2)}</td>
+                  <td className={profClass}>
+                    {(curValue - stock.avg * stock.qty).toFixed(2)}
+                  </td>
+                  <td className={dayClass}>{stock.day}</td>
                 </tr>
               );
             })}

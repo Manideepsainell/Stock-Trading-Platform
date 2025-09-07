@@ -1,6 +1,16 @@
 import React from "react";
 
 const Summary = () => {
+  // Default values for a new user
+  const marginAvailable = 0;
+  const marginsUsed = 0;
+  const openingBalance = 0;
+  const holdingsCount = 0;
+  const pnl = 0;
+  const pnlPercentage = 0;
+  const currentValue = 0;
+  const investment = 0;
+
   return (
     <>
       <div className="username">
@@ -15,17 +25,17 @@ const Summary = () => {
 
         <div className="data">
           <div className="first">
-            <h3>3.74k</h3>
+            <h3>{marginAvailable}</h3>
             <p>Margin available</p>
           </div>
           <hr />
 
           <div className="second">
             <p>
-              Margins used <span>0</span>{" "}
+              Margins used <span>{marginsUsed}</span>
             </p>
             <p>
-              Opening balance <span>3.74k</span>{" "}
+              Opening balance <span>{openingBalance}</span>
             </p>
           </div>
         </div>
@@ -34,13 +44,13 @@ const Summary = () => {
 
       <div className="section">
         <span>
-          <p>Holdings (13)</p>
+          <p>Holdings ({holdingsCount})</p>
         </span>
 
         <div className="data">
           <div className="first">
-            <h3 className="profit">
-              1.55k <small>+5.20%</small>{" "}
+            <h3 className={pnl >= 0 ? "profit" : "loss"}>
+              {pnl} <small>{pnlPercentage >= 0 ? `+${pnlPercentage}%` : `${pnlPercentage}%`}</small>
             </h3>
             <p>P&L</p>
           </div>
@@ -48,10 +58,10 @@ const Summary = () => {
 
           <div className="second">
             <p>
-              Current Value <span>31.43k</span>{" "}
+              Current Value <span>{currentValue}</span>
             </p>
             <p>
-              Investment <span>29.88k</span>{" "}
+              Investment <span>{investment}</span>
             </p>
           </div>
         </div>
