@@ -22,7 +22,7 @@ const app = express();
 // Universal CORS for simplicity
 const allowedOrigins = [
   "http://localhost:3001",
-  "https://main.d1trzlmgp9l0ln.amplifyapp.com",
+  "https://main.dni04gzwer7ho.amplifyapp.com",
   "https://main.dnhat8qvs6b5l.amplifyapp.com",
 
 ];
