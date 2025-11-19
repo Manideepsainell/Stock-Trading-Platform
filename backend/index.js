@@ -1,17 +1,18 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const yahooFinance = require("yahoo-finance2").default;
+// index.js (ESM)
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import yahooFinance from 'yahoo-finance2';
 
-const { HoldingsModel } = require("./model/HoldingsModel");
-const { PositionsModel } = require("./model/PositionsModel");
-const { OrdersModel } = require("./model/OrdersModel");
+import { HoldingsModel } from './model/HoldingsModel.js';
+import { PositionsModel } from './model/PositionsModel.js';
+import { OrdersModel } from './model/OrdersModel.js';
 
-const authRoutes = require("./routes/auth");
-const stockRoutes = require("./routes/stocks");
-const protect = require("./middleware/authmiddleware");
+import authRoutes from './routes/auth.js';
+import stockRoutes from './routes/stocks.js';
+import protect from './middleware/authmiddleware.js';
 
 const PORT = process.env.PORT || 3002;
 const uri = process.env.MONGO_URL;
@@ -24,7 +25,6 @@ const allowedOrigins = [
   "http://localhost:3001",
   "https://main.dni04gzwer7ho.amplifyapp.com",
   "https://main.dnhat8qvs6b5l.amplifyapp.com",
-
 ];
 
 // General middleware
@@ -40,18 +40,16 @@ app.use((req, res, next) => {
       res.header("Access-Control-Allow-Credentials", "true");
     }
   }
-  
+
   // Common headers
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  
+
   // Handle preflight
   if (req.method === "OPTIONS") return res.sendStatus(200);
 
   next();
 });
-
-
 
 app.use(cookieParser());
 app.use(express.json());
@@ -59,7 +57,7 @@ app.use(express.json());
 // ===== Auth & Stock Routes =====
 app.use("/api/auth", authRoutes);
 app.use("/api/stocks", stockRoutes);
-app.use("/api/summary", require("./routes/summary"));
+app.use("/api/summary", (await import('./routes/summary.js')).default); // lazy import if summary exports default
 
 // ===== Database Connect =====
 mongoose.connect(uri)
@@ -71,14 +69,8 @@ mongoose.connect(uri)
 
 // ===== User Data Routes =====
 
-// Holdings
-app.get("/allHoldings", protect, async (req, res) => {
-  try {
-    const allHoldings = await HoldingsModel.find({ userId: req.user.id });
-    if (!allHoldings || allHoldings.length === 0) return res.json([]); // empty for new users
-
-    const updatedHoldings = await Promise.all(allHoldings.map(async (holding) => {
-const symbolMap = {
+// helper symbolMap (reuse across routes)
+const SYMBOL_MAP = {
   RELIANCE: "RELIANCE.NS",
   TCS: "TCS.NS",
   INFY: "INFY.NS",
@@ -88,8 +80,16 @@ const symbolMap = {
   KOTAKBANK: "KOTAKBANK.NS",
   SBIN: "SBIN.NS",
 };
-      const symbol = symbolMap[holding.name] || `${holding.name}.NS`;
-    const quote = await yahooFinance.quote(symbol);
+
+// Holdings
+app.get("/allHoldings", protect, async (req, res) => {
+  try {
+    const allHoldings = await HoldingsModel.find({ userId: req.user.id });
+    if (!allHoldings || allHoldings.length === 0) return res.json([]); // empty for new users
+
+    const updatedHoldings = await Promise.all(allHoldings.map(async (holding) => {
+      const symbol = SYMBOL_MAP[holding.name] || `${holding.name}.NS`;
+      const quote = await yahooFinance.quote(symbol);
       const curValue = quote.regularMarketPrice * holding.qty;
       const net = curValue - holding.avg * holding.qty;
       return { ...holding._doc, price: quote.regularMarketPrice, day: quote.regularMarketChange.toFixed(2), net: net.toFixed(2), isLoss: net < 0 };
@@ -109,17 +109,7 @@ app.get("/allPositions", protect, async (req, res) => {
     if (!allPositions || allPositions.length === 0) return res.json([]);
 
     const updatedPositions = await Promise.all(allPositions.map(async (position) => {
-      const symbolMap = {
-        RELIANCE: "RELIANCE.NS",
-        TCS: "TCS.NS",
-        INFY: "INFY.NS",
-        HDFCBANK: "HDFCBANK.NS",
-        ICICIBANK: "ICICIBANK.NS",
-        ITC: "ITC.NS",
-        KOTAKBANK: "KOTAKBANK.NS",
-        SBIN: "SBIN.NS",
-      };
-      const symbol = symbolMap[position.name] || `${position.name}.NS`;
+      const symbol = SYMBOL_MAP[position.name] || `${position.name}.NS`;
       const quote = await yahooFinance.quote(symbol);
       const curValue = quote.regularMarketPrice * position.qty;
       const net = curValue - position.avg * position.qty;
@@ -140,17 +130,7 @@ app.get("/allOrders", protect, async (req, res) => {
     if (!allOrders || allOrders.length === 0) return res.json([]);
 
     const updatedOrders = await Promise.all(allOrders.map(async (order) => {
-      const symbolMap = {
-        RELIANCE: "RELIANCE.NS",
-        TCS: "TCS.NS",
-        INFY: "INFY.NS",
-        HDFCBANK: "HDFCBANK.NS",
-        ICICIBANK: "ICICIBANK.NS",
-        ITC: "ITC.NS",
-        KOTAKBANK: "KOTAKBANK.NS",
-        SBIN: "SBIN.NS",
-      };
-      const symbol = symbolMap[order.name] || `${order.name}.NS`;
+      const symbol = SYMBOL_MAP[order.name] || `${order.name}.NS`;
       const quote = await yahooFinance.quote(symbol);
       return { ...order._doc, price: quote.regularMarketPrice };
     }));

@@ -1,25 +1,21 @@
-const express = require("express");
-const yahooFinance = require("yahoo-finance2").default;
-const watchlistSymbols = ["RELIANCE.NS", "TCS.NS", "INFY.NS"];
+// routes/stocks.js
+import express from "express";
+import yahooFinance from "yahoo-finance2";
 const router = express.Router();
 
-// Single stock quote (existing route)
-;
+const watchlistSymbols = ["RELIANCE.NS", "TCS.NS", "INFY.NS"];
 
-// Arrays of NSE symbols
+// Arrays of NSE symbols (partial — extend as needed)
 const sensexNseSymbols = [
   "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
   "ITC.NS", "KOTAKBANK.NS", "SBIN.NS", "BHARTIARTL.NS", "LT.NS"
-  // add all 30
 ];
 
 const niftyNseSymbols = [
   "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS",
   "ITC.NS", "KOTAKBANK.NS", "SBIN.NS", "LT.NS", "HCLTECH.NS"
-  // add all 50
 ];
 
-// Helper function to fetch multiple stocks
 async function fetchStocks(symbols) {
   return Promise.all(
     symbols.map(async (symbol) => {
@@ -56,7 +52,6 @@ router.get("/nifty/all", async (req, res) => {
   res.json(data);
 });
 
-
 // Watchlist route
 router.get("/watchlist", async (req, res) => {
   try {
@@ -68,7 +63,7 @@ router.get("/watchlist", async (req, res) => {
   }
 });
 
-// Single stock route (move OUTSIDE)
+// Single stock route (make sure to place this AFTER other static routes)
 router.get("/:symbol", async (req, res) => {
   try {
     const input = req.params.symbol.toUpperCase();
@@ -104,4 +99,4 @@ router.get("/:symbol", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,5 @@
-const { model } = require("mongoose");
-const HoldingSchema = require("../schemas/HoldingSchema");  // no destructuring
+// model/HoldingsModel.js
+import { model } from "mongoose";
+import HoldingSchema from "../schemas/HoldingSchema.js"; // default export from schema
 
-// ✅ register the model with the schema
-const HoldingsModel = model("Holding", HoldingSchema); // use capitalized model name
-
-module.exports = { HoldingsModel };
+export const HoldingsModel = model("Holding", HoldingSchema);

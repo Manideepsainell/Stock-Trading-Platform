@@ -1,4 +1,7 @@
-const { Schema } = require("mongoose");
+// schemas/PositionsSchema.js
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
 
 const PositionSchema = new Schema({
   product: String,
@@ -11,4 +14,4 @@ const PositionSchema = new Schema({
   isLoss: Boolean,
 });
 
-module.exports = PositionSchema;   // export directly
+export default PositionSchema;
