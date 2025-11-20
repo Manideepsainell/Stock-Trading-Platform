@@ -1,11 +1,10 @@
 // routes/summary.js
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
 // Example mock calculation (replace with DB aggregation later)
 router.get("/", async (req, res) => {
   try {
-    // Example static summary
     const summary = {
       marginAvailable: 3740,
       marginUsed: 0,
@@ -25,4 +24,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

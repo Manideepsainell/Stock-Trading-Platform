@@ -1,4 +1,7 @@
-const { Schema } = require("mongoose");
+// schemas/HoldingSchema.js
+import mongoose from "mongoose";
+
+const { Schema } = mongoose;
 
 const HoldingSchema = new Schema({
   name: String,
@@ -10,5 +13,4 @@ const HoldingSchema = new Schema({
   isLoss: Boolean
 });
 
-// ✅ export the schema
-module.exports = HoldingSchema;
+export default HoldingSchema;
